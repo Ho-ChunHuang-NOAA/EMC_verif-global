@@ -104,9 +104,32 @@ def create_run_script(target_date, machine_name, application_name, max_forecast_
                 sh.write(f"#SBATCH --partition={partition}\n")
                 sh.write(f"#SBATCH --qos={qos}\n")
 
+            elif machine_name == 'hera':
+                account = "nesdis-rdo2"
+                qos = "batch"
+                sh.write(f"#SBATCH --account={account}\n")
+                sh.write(f"#SBATCH --job-name={jobname}\n")
+                sh.write(f"#SBATCH --output={jobname}.out.%j\n")
+                sh.write(f"#SBATCH --time={task_cpu}\n")
+                sh.write(f"#SBATCH --ntasks=1\n")
+                sh.write(f"#SBATCH --cpus-per-task=1\n")
+                sh.write(f"#SBATCH --qos={qos}\n")
+
+            elif machine_name == 'ursa':
+                account = "naqfc"
+                qos = "batch"
+                sh.write(f"#SBATCH --account={account}\n")
+                sh.write(f"#SBATCH --job-name={jobname}\n")
+                sh.write(f"#SBATCH --output={jobname}.out.%j\n")
+                sh.write(f"#SBATCH --time={task_cpu}\n")
+                sh.write(f"#SBATCH --ntasks=1\n")
+                sh.write(f"#SBATCH --cpus-per-task=1\n")
+                sh.write(f"#SBATCH --qos={qos}\n")
+                sh.write(f"#SBATCH --get-user-env\n")
+
             # --- WCOSS2 (PBS) Job Card ---
             elif machine_name == 'wcoss2':
-                account = "AQM-DEV" # Example account for WCOSS2
+                account = "VERF-DEV" # Example account for WCOSS2
                 queue = "dev" # Example queue for WCOSS2
                 sh.write(f"#PBS -o {logfile}\n")
                 sh.write(f"#PBS -e {logfile}\n")
@@ -122,10 +145,7 @@ def create_run_script(target_date, machine_name, application_name, max_forecast_
             # --- Set Machine Name ---
             sh.write("\n")
             sh.write("# Set the machine name\n")
-            if machine_name == 'gaeac6':
-                sh.write("export machine=gaeac6\n")
-            elif machine_name == 'wcoss2':
-                sh.write("export machine=wcoss2\n")
+            sh.write(f"export machine={machine_name}\n")
 
             # --- Experiment Date Configuration ---
             sh.write("\n")
@@ -201,7 +221,7 @@ def create_run_script(target_date, machine_name, application_name, max_forecast_
     # Speculate on the final stats directory based on the script's comments
     stats_dir_pattern = f"{user_stats_output_location}/metplus_data/by_${{gather_by}}/{application_name}/<validation_type>/${{cyc}}z/${{model}}/"
 
-    if machine_name == 'gaeac6':
+    if machine_name == 'gaeac6' or 'hera' or 'ursa':
         print(f"Stats Dir Pattern = {stats_dir_pattern}")
         submission_command = f"sbatch {run_batch_file}"
     elif machine_name == 'wcoss2':
@@ -238,14 +258,18 @@ if __name__ == "__main__":
     common_script_to_append = "my_standalone_step1_stats.append"
     
     # --- Define runtime script igenerated and runtime log file directory location ---
-    # --- For example, the exact directory path
-    #     script_dir = "f"/gpfs/f6/ira-sti/world-shared/{user}/script"
-    #     log_dir    = "f"/gpfs/f6/ira-sti/world-shared/{user}/logs"
-    current_script_path = os.path.abspath(__file__)
-    current_directory = os.path.dirname(current_script_path)
-    parent_directory = os.path.dirname(current_directory)
-    script_dir = os.path.join(parent_directory, "run_script")
-    log_dir    = os.path.join(parent_directory, "run_log")
+    # --- For example, 
+    # [1] the exact directory path
+    #     script_dir = f"/gpfs/f6/ira-sti/world-shared/{user}/script"
+    #     log_dir    = f"/gpfs/f6/ira-sti/world-shared/{user}/logs"
+    # [2] link to current working directory
+    #     current_script_path = os.path.abspath(__file__)
+    #     current_directory = os.path.dirname(current_script_path)
+    #     parent_directory = os.path.dirname(current_directory)
+    #     script_dir = os.path.join(parent_directory, "run_script")
+    #     log_dir    = os.path.join(parent_directory, "run_log")
+    script_dir = f"/gpfs/f6/ira-sti/world-shared/{user}/script"
+    log_dir    = f"/gpfs/f6/ira-sti/world-shared/{user}/logs"
 
     # --- Define cpu time for the batch job ---
     user_select_task_cpu = "03:00:00"
@@ -257,7 +281,7 @@ if __name__ == "__main__":
             sys.exit(1)
 
     # --- Define allowed inputs ---
-    ALLOWED_MACHINES = ['gaeac6']
+    ALLOWED_MACHINES = ['gaeac6', 'wcoss2', 'hera', 'ursa' ]
     ALLOWED_APPLICATIONS = ['grid2obs', 'grid2grid', 'precip', 'satellite']
 
     # --- Check for number of USER-PROVIDED arguments ---

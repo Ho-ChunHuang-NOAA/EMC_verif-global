@@ -13,15 +13,12 @@ export KEEPDATA=YES
 ##################DO NOT EDIT BELOW THIS LINE######################
 
 # Load the needed modules for METplus
-module use /ncrc/proj/epic/spack-stack/c6/spack-stack-1.9.3/envs/ue-oneapi-2024.2.1/install/modulefiles/Core
-module load stack-oneapi
-module load stack-cray-mpich
-module load stack-python
-module load metplus/6.0.0
-module load met/12.0.1
-module load prod_util/2.1.1
-module load wgrib2
-module load grib-util
+if [ $machine = "ursa" ]; then
+    module purge
+else
+    module reset
+module use "${HOMEverif_global}/modulefiles"
+module load "emc_verif_global_${machine}"
 
 # Set some workflow environment variables
 export jobid=$$
@@ -50,20 +47,16 @@ if [ $on_machine = "WCOSS2" ]; then
     ln -sf /lfs/h2/emc/global/noscrub/emc.global/FIX/fix/verif/20220805 "${FIXgfs}/verif"
 elif [ $on_machine = "HERA" ]; then
     ln -sf /scratch1/NCEPDEV/global/glopara/fix/verif/20220805 "${FIXgfs}/verif"
+elif [ $on_machine = "URSA" ]; then
+    ln -sf /scratch3/NCEPDEV/global/role.glopara/fix/verif/20220805 "${FIXgfs}/verif"
 elif [ $on_machine = "ORION" -o $on_machine = "HERCULES" ]; then
     ln -sf /work/noaa/global/glopara/fix/verif/20220805 "${FIXgfs}/verif"
-elif [ $on_machine = "S4" ]; then
-    ln -sf /data/prod/glopara/fix/verif/20220805 "${FIXgfs}/verif"
-elif [ $on_machine = "JET" ]; then
-    ln -sf /lfs4/HFIP/hfv3gfs/glopara/git/fv3gfs/fix/verif/20220805 "${FIXgfs}/verif"
-elif [ $on_machine = "GAEAC5" ]; then
-    ln -sf /gpfs/f5/nggps_emc/world-shared/role.glopara/FIX/fix/verif/20220805 "${FIXgfs}/verif"
 elif [ $on_machine = "GAEAC6" ]; then
     ln -sf /gpfs/f6/drsa-precip3/world-shared/role.glopara/fix/verif/20220805 "${FIXgfs}/verif"
 fi
 
 ## Set machine specific account, queues, and run settings
-if [[ "${on_machine}" ==  "GAEAC6" || "${on_machine}" ==  "GAEAC5" ]]; then
+if [[ "${on_machine}" ==  "GAEAC6" ]]; then
     export ACCOUNT=gfs-cpu  
     export QUEUE_SERVICE="service"
     export PARTITION_DTN=dtn_f5_f6
@@ -281,11 +274,11 @@ done
 
 # TODO: If none of these are on, why are we running this job?
 if [[ "${RUN_GRID2GRID_STEP1}" == "YES" || "${RUN_GRID2OBS_STEP1}" == "YES" || "${RUN_PRECIP_STEP1}" == "YES" || "${RUN_SATELLITE_STEP1}" == "YES" ]]; then
-    bash -x "${VERIF_GLOBALSH}"
+    "${VERIF_GLOBALSH}"
     err=$?
     if [[ ${err} -ne 0 ]]; 
         then exit "${err}"
     fi
 fi
 
-if [[ ${KEEPDATA:-"NO"} = "NO" ]] ; then rm -rf "${DATAROOT}" ; fi  # TODO: This should be $DATA
+if [[ ${KEEPDATA:-"NO"} = "NO" ]] ; then rm -rf "${DATA}" ; fi
