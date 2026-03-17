@@ -104,23 +104,12 @@ def create_run_script(target_date, machine_name, application_name, max_forecast_
                 sh.write(f"#SBATCH --partition={partition}\n")
                 sh.write(f"#SBATCH --qos={qos}\n")
 
-            elif machine_name == 'hera':
-                account = "nesdis-rdo2"
-                qos = "batch"
-                sh.write(f"#SBATCH --account={account}\n")
-                sh.write(f"#SBATCH --job-name={jobname}\n")
-                sh.write(f"#SBATCH --output={jobname}.out.%j\n")
-                sh.write(f"#SBATCH --time={task_cpu}\n")
-                sh.write(f"#SBATCH --ntasks=1\n")
-                sh.write(f"#SBATCH --cpus-per-task=1\n")
-                sh.write(f"#SBATCH --qos={qos}\n")
-
             elif machine_name == 'ursa':
                 account = "naqfc"
                 qos = "batch"
                 sh.write(f"#SBATCH --account={account}\n")
                 sh.write(f"#SBATCH --job-name={jobname}\n")
-                sh.write(f"#SBATCH --output={jobname}.out.%j\n")
+                sh.write(f"#SBATCH --output={logfile}\n")
                 sh.write(f"#SBATCH --time={task_cpu}\n")
                 sh.write(f"#SBATCH --ntasks=1\n")
                 sh.write(f"#SBATCH --cpus-per-task=1\n")
@@ -221,7 +210,7 @@ def create_run_script(target_date, machine_name, application_name, max_forecast_
     # Speculate on the final stats directory based on the script's comments
     stats_dir_pattern = f"{user_stats_output_location}/metplus_data/by_${{gather_by}}/{application_name}/<validation_type>/${{cyc}}z/${{model}}/"
 
-    if machine_name == 'gaeac6' or 'hera' or 'ursa':
+    if machine_name == 'gaeac6' or 'ursa':
         print(f"Stats Dir Pattern = {stats_dir_pattern}")
         submission_command = f"sbatch {run_batch_file}"
     elif machine_name == 'wcoss2':
@@ -248,11 +237,13 @@ if __name__ == "__main__":
     max_forecast_hour_for_stats = 240 # 10 days
 
     # User-defined model name and model grib2 files output location
-    user_model_output_location = f"/gpfs/f6/ira-sti/world-shared/{user}/KEEP_archive"
+    # user_model_output_location = f"/gpfs/f6/ira-sti/world-shared/{user}/KEEP_archive"
+    user_model_output_location = f"/scratch4/NCEPDEV/naqfc/{user}/noscrub/gfs_data"
     com_model_list = [ "gfsv16", "retrov17_01_stream4" ]
 
     # User-defined verification stats output location
-    user_stats_output_location = f"/gpfs/f6/ira-sti/world-shared/{user}/stats"
+    # user_stats_output_location = f"/gpfs/f6/ira-sti/world-shared/{user}/stats"
+    user_stats_output_location = f"/scratch4/NCEPDEV/naqfc/{user}/noscrub/stats"
 
     # Define the common configuration file name (in current directory) to be merged
     common_script_to_append = "my_standalone_step1_stats.append"
@@ -268,8 +259,10 @@ if __name__ == "__main__":
     #     parent_directory = os.path.dirname(current_directory)
     #     script_dir = os.path.join(parent_directory, "run_script")
     #     log_dir    = os.path.join(parent_directory, "run_log")
-    script_dir = f"/gpfs/f6/ira-sti/world-shared/{user}/script"
-    log_dir    = f"/gpfs/f6/ira-sti/world-shared/{user}/logs"
+    # script_dir = f"/gpfs/f6/ira-sti/world-shared/{user}/script"
+    # log_dir    = f"/gpfs/f6/ira-sti/world-shared/{user}/logs"
+    script_dir = f"/scratch4/NCEPDEV/naqfc/{user}/noscrub/script"
+    log_dir    = f"/scratch4/NCEPDEV/naqfc/{user}/noscrub/logs"
 
     # --- Define cpu time for the batch job ---
     user_select_task_cpu = "03:00:00"
@@ -281,7 +274,7 @@ if __name__ == "__main__":
             sys.exit(1)
 
     # --- Define allowed inputs ---
-    ALLOWED_MACHINES = ['gaeac6', 'wcoss2', 'hera', 'ursa' ]
+    ALLOWED_MACHINES = ['gaeac6', 'wcoss2', 'ursa' ]
     ALLOWED_APPLICATIONS = ['grid2obs', 'grid2grid', 'precip', 'satellite']
 
     # --- Check for number of USER-PROVIDED arguments ---

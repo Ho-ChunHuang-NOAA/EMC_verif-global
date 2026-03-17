@@ -1,7 +1,13 @@
 # LOOK HERE!!
 ##############EDIT THIS SECTION######################
 # Set a base working directory.  Subdirectories for each job will be created under this.
-export DATAROOT=/gpfs/f6/drsa-precip3/world-shared/${USER}/tmp_metp
+if [ $machine = "ursa" ]; then
+    export DATAROOT=/scratch4/NCEPDEV/stmp/${USER}/tmp_metp
+elif [ $machine = "gaeac6" ]; then
+    export DATAROOT=/gpfs/f6/drsa-precip3/world-shared/${USER}/tmp_metp
+else
+    echo "DATAROOT dir is not defined on this machine : $machine. Program EXIT"
+fi
 # Change COMROOT to the appropriate location
 export COMROOT=/gpfs/f6/drsa-precip3/world-shared/${USER}/para_KEEP/COMROOT
 # cyc specifies the last forecast init time to use. 
@@ -10,6 +16,9 @@ export cyc=18
 #
 # Whether to keep the temporary working directory or not
 export KEEPDATA=YES
+#
+# For the location of HPSS directory of HPSS data transfer if activated
+export HPSS_PROJECT="emc-naqfc"
 ##################DO NOT EDIT BELOW THIS LINE######################
 
 # Load the needed modules for METplus
@@ -17,6 +26,7 @@ if [ $machine = "ursa" ]; then
     module purge
 else
     module reset
+fi
 module use "${HOMEverif_global}/modulefiles"
 module load "emc_verif_global_${machine}"
 
@@ -45,8 +55,6 @@ export FIXgfs=${DATA}
 on_machine=$(echo $machine | tr '[a-z]' '[A-Z]')  ## in uppercase
 if [ $on_machine = "WCOSS2" ]; then
     ln -sf /lfs/h2/emc/global/noscrub/emc.global/FIX/fix/verif/20220805 "${FIXgfs}/verif"
-elif [ $on_machine = "HERA" ]; then
-    ln -sf /scratch1/NCEPDEV/global/glopara/fix/verif/20220805 "${FIXgfs}/verif"
 elif [ $on_machine = "URSA" ]; then
     ln -sf /scratch3/NCEPDEV/global/role.glopara/fix/verif/20220805 "${FIXgfs}/verif"
 elif [ $on_machine = "ORION" -o $on_machine = "HERCULES" ]; then
@@ -208,7 +216,15 @@ export sat1_ghrsst_ospo_geopolar_anl_sea_ice_thresh="0.15"
 export sat1_mv_database_name="mv_${PSLOT}_satellite_metplus_TEST"
 export sat1_mv_database_group="NOAA NCEP"
 export sat1_mv_database_desc="Satellite METplus data for global workflow experiment ${PSLOT}"
-export sat1_obs_dir="/gpfs/f6/drsa-precip3/world-shared/Ho-Chun.Huang/obs_archive/"
+if [ $on_machine = "URSA" ]; then
+    export sat1_obs_dir="/scratch4/NCEPDEV/naqfc/${USER}/noscrub/obs_archive/"
+elif [ $on_machine = "GAEAC6" ]; then
+    export sat1_obs_dir="/gpfs/f6/drsa-precip3/world-shared/${USER}/obs_archive/"
+else
+    echo "sat1_obs_dir is not defined in this machine : $on_machine. Program EXIT"
+    if [[ "${RUN_SATELLITE_STEP1}" == "YES" ]]; then exit; fi
+fi
+
 
 echo "END: config.metp"
 #######################################################
